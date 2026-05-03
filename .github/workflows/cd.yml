@@ -1,0 +1,31 @@
+name: CD - Publicar en Docker Hub
+
+# Esto se ejecuta solo cuando el código nuevo entra a la rama principal (main)
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Descargar el código
+      uses: actions/checkout@v4
+
+    - name: Iniciar sesión en Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Configurar Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Construir y Subir Imagen
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        # Nombra la imagen usando tu usuario de Docker Hub automáticamente
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-devops:latest
