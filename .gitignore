@@ -8,5 +8,5 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Variables de entorno (Seguridad)
+# Variables de entorno
 .env

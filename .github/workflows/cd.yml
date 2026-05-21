@@ -1,6 +1,5 @@
 name: CD - Publicar en Docker Hub
 
-# Esto se ejecuta solo cuando el código nuevo entra a la rama principal (main)
 on:
   push:
     branches: [ "main" ]
@@ -27,5 +26,4 @@ jobs:
       with:
         context: .
         push: true
-        # Nombra la imagen usando tu usuario de Docker Hub automáticamente
         tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-devops:latest

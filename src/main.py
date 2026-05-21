@@ -2,9 +2,7 @@ from fastapi import FastAPI
 import sentry_sdk
 from typing import Dict
 
-# Inicializamos Sentry. ¡Automáticamente va a leer la variable SENTRY_DSN de Render!
 sentry_sdk.init(
-    # traces_sample_rate al 1.0 significa que captura el 100% de las transacciones (APM/Trazas)
     traces_sample_rate=1.0,
     profiles_sample_rate=1.0,
 )
@@ -23,7 +21,7 @@ def read_root() -> Dict[str, str]:
 def health_check() -> Dict[str, str]:
     return {"status": "healthy", "service": "api-gateway"}
 
-# Este es el endpoint trampa para tu demostración
+# Endpoint para generar un error de prueba capturado por Sentry
 @app.get("/sentry-debug", tags=["Testing"])
 async def trigger_error():
     division_by_zero = 1 / 0
