@@ -3,28 +3,31 @@ name: CI-CD Pipeline DevOps E2E
 on:
   push:
     branches:
-      - main # Se dispara cuando hacés push a la rama principal
+      - main # se dispara al hacer push en main
 
 jobs:
-  # PASO 1: VALIDACIÓN (TESTS)
+  # etapa de testeo
   test:
     name: Pruebas Unitarias (Pytest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip' # Caché de pip para acelerar subsecuentes ejecuciones
+          cache: 'pip' # cache para apurar las dependencias
+          
       - name: Instalar Dependencias
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          
       - name: Ejecutar Pytest
         run: pytest tests/ -v
 
-  # PASO 2: EMPAQUETADO Y SEGURIDAD (DOCKER + TRIVY)
+  # etapa de construccion y analisis estatico
   build_and_push:
     name: Build, Scan y Push (SemVer)
     needs: test
@@ -38,7 +41,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Construimos la imagen local para el escaneo de seguridad
+      # imagen local temporal para escanear
       - name: Build local para Scan
         uses: docker/build-push-action@v5
         with:
@@ -47,32 +50,31 @@ jobs:
           load: true
           tags: api-test:local
 
-      # ESCANEO CON TRIVY
+      # analisis de vulnerabilidades
       - name: Escaneo de Vulnerabilidades (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'api-test:local'
           format: 'table'
-          exit-code: '0' # Mostramos reporte en logs sin frenar el despliegue por CVEs de la imagen base
+          exit-code: '0' # reportamos criticos pero sin romper la build por temas de la imagen base
           severity: 'CRITICAL'
 
-
-      # Si Trivy pasa, subimos a Docker Hub con VERSIONADO SEMÁNTICO e inmutable
+      # si todo esta ok, subimos a docker hub con tags latest y semver
       - name: Build y Push Versionado
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-api:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-api:v1.0.${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/api-devops:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/api-devops:v1.0.${{ github.run_number }}
 
-  # PASO 3: DESPLIEGUE ACTIVO (RENDER)
+  # disparo del despliegue en render
   deploy:
     name: Deploy Activo en Render
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Deploy Hook
-        # Este comando le avisa a Render que ya puede descargar y desplegar la nueva imagen
+        # llamamos al webhook de render para forzar la actualizacion de la imagen
         run: curl -f -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}

@@ -21,7 +21,7 @@ def read_root() -> Dict[str, str]:
 def health_check() -> Dict[str, str]:
     return {"status": "healthy", "service": "api-gateway"}
 
-# Endpoint para generar un error de prueba capturado por Sentry
+# endpoint para tirar un error de prueba y testear sentry
 @app.get("/sentry-debug", tags=["Testing"])
 async def trigger_error():
     division_by_zero = 1 / 0
